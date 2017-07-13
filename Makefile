@@ -15,7 +15,7 @@ ifeq ($(OS),Linux)
     LDLIBS += -lglfw -lGL
 endif
 
-.PHONY: default all clean run
+.PHONY: default all clean run format
 .SUFFIXES:
 .SUFFIXES: .c .o
 default: all
@@ -35,3 +35,6 @@ clean:
 
 run: all
 	./$(DESTDIR)/$(TARGET)
+
+format:
+	astyle --options=".astyle" "src/*.c" "include/*.h"

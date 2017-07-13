@@ -1,0 +1,4 @@
+-A1    # Allman brace style
+-k2    # Pointers in the middle
+-t     # Tab indent
+-r     # Recursive
