@@ -9,10 +9,11 @@ Requirements:
 
 ## Compiling
 
-Install `glfw3`:
+First, install `glfw3` using your favourite package manager:
 ```sh
-brew install glfw            # Homebrew - OSX
-apt-get install libglfw3-dev # APT - Debian
+brew install glfw             # Homebrew - OSX
+apt-get install libglfw3-dev  # APT - Debian
+pacman -S glfw-x11            # Pacman - Arch
 ```
 Then run `make` to compile. It produces the executable at `build/termix`. Running `make run` compiles and runs the executable in one step.
 
