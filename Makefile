@@ -2,15 +2,17 @@ SHELL = /bin/sh
 TARGET = termix
 SRCDIR = src
 DESTDIR = build
+CFLAGS += -g -Iinclude --std=c99 -Wall -Wextra -Wpedantic
+
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(subst $(SRCDIR),$(DESTDIR),$(SRCS:.c=.o))
-CFLAGS += -g -Iinclude
+
 OS := $(shell uname -s)
 ifeq ($(OS),Darwin)
     LDLIBS += -lglfw3 -framework OpenGL
 endif
 ifeq ($(OS),Linux)
-    LDLIBS += -lglfw -lm -lGL
+    LDLIBS += -lglfw -lGL
 endif
 
 .PHONY: default all clean run

@@ -12,7 +12,7 @@ int main(void)
 	// Select OpenGL 2.1
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-	GLFWwindow *window = glfwCreateWindow(640, 480, "Unnamed Window", NULL, NULL);
+	GLFWwindow * window = glfwCreateWindow(1280, 720, "Termix", NULL, NULL);
 	if (!window)
 	{
 		fprintf(stderr, "Window creation failedn");
