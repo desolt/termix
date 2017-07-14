@@ -2,7 +2,7 @@ SHELL = /bin/sh
 TARGET = termix
 SRCDIR = src
 DESTDIR = build
-CFLAGS += -g -Iinclude --std=c99 -Wall -Wextra -Wpedantic
+CFLAGS += -g -Iinclude --std=c99 -Wall -Wextra -Wpedantic -D_DEFAULT_SOURCE
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(subst $(SRCDIR),$(DESTDIR),$(SRCS:.c=.o))

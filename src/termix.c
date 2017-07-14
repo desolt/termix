@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <GLFW/glfw3.h>
 #include "termix.h"
