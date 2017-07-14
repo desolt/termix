@@ -15,7 +15,7 @@ int main(void)
 	GLFWwindow * window = glfwCreateWindow(1280, 720, "Termix", NULL, NULL);
 	if (!window)
 	{
-		fprintf(stderr, "Window creation failedn");
+		fprintf(stderr, "Window creation failed\n");
 		return -1;
 	}
 
