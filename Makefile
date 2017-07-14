@@ -2,17 +2,19 @@ SHELL = /bin/sh
 TARGET = termix
 SRCDIR = src
 DESTDIR = build
-CFLAGS += -g -Iinclude --std=c99 -Wall -Wextra -Wpedantic -D_DEFAULT_SOURCE
+CFLAGS += -g -Iinclude --std=c99 -Wall -Wextra -Wpedantic $(shell freetype-config --cflags)
+LDLIBS += -lglfw $(shell freetype-config --libs)
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(subst $(SRCDIR),$(DESTDIR),$(SRCS:.c=.o))
 
 OS := $(shell uname -s)
 ifeq ($(OS),Darwin)
-    LDLIBS += -lglfw3 -framework OpenGL
+    LDLIBS += -framework OpenGL
 endif
 ifeq ($(OS),Linux)
-    LDLIBS += -lglfw -lGL
+    LDLIBS += -lGL
+    CFLAGS += -D_DEFAULT_SOURCE
 endif
 
 .PHONY: default all clean run format
