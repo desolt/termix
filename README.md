@@ -11,10 +11,20 @@ Requirements:
 
 First, install `glfw3` using your favourite package manager:
 ```sh
-brew install glfw             # Homebrew - OSX
-apt-get install libglfw3-dev  # APT - Debian
-pacman -S glfw-x11            # Pacman - Arch
+brew install glfw                # Homebrew - OSX
+apt-get install libglfw3-dev     # APT - Debian
+pacman -S glfw-x11               # Pacman - Arch
+emerge glfw                      # Portage - Gentoo
 ```
+
+Then, install `freetype`:
+```sh
+brew install freetype            # Homebrew - OSX
+apt-get install libfreetype6-dev # APT - Debian
+pacman -S freetype2              # Pacman - Arch
+emerge freetype                  # Portage - Gentoo
+```
+
 Then run `make` to compile. It produces the executable at `build/termix`. Running `make run` compiles and runs the executable in one step.
 
 ## Contributing
