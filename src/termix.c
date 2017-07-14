@@ -94,6 +94,14 @@ int tx_run(void)
 
 	glfwDestroyWindow(window);
 
+	return 0;
+}
+
+int tx_cleanup(void)
+{
+	glfwTerminate();
+
+	// Print errors to ensure that we don't leak memory from the log
 	if (tx_geterr() != 0)
 	{
 		tx_print_errors();
