@@ -32,6 +32,8 @@ all: $(DESTDIR) $(OBJS)
 clean:
  	# Could be $(DESTDIR)/*, but in case $(DESTDIR) is not set...
 	rm -rf $(DESTDIR)
+	rm src/*.orig
+	rm include/*.orig
 
 run: all
 	./$(DESTDIR)/$(TARGET)
