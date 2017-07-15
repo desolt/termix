@@ -18,7 +18,7 @@ pacman -S glfw-x11 freetype2                   # Pacman - Arch
 emerge media-libs/glfw media-libs/freetype     # Portage - Gentoo
 
 # OS X
-brew install glfw freetype                      # Homebrew
+brew install glfw freetype                     # Homebrew
 ```
 Then run `make` to compile. It produces the executable at `build/termix`. Running `make run` compiles and runs the executable in one step.
 
