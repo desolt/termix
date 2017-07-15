@@ -11,7 +11,7 @@
 char * error_log[MAX_ERROR_LOG_LENGTH] = { NULL };
 size_t log_entries = 0;
 
-void tx_print_errors(void)
+void tx_gl_print_errors(void)
 {
 	assert(log_entries != 0);
 
@@ -26,7 +26,7 @@ void tx_print_errors(void)
 	log_entries = 0;
 }
 
-int tx_geterr(void)
+int tx_gl_geterr(void)
 {
 	// Query OpenGL to see if there were any errors
 	GLenum error;
@@ -72,7 +72,7 @@ int tx_geterr(void)
 
 // http://www.glfw.org/docs/latest/intro_guide.html#error_handling
 // http://www.glfw.org/docs/latest/group__errors.html
-void tx_error_callback(int error, const char * description)
+void tx_gl_error_callback(int error, const char * description)
 {
 	(void)error; // Suppress unused warning
 	if (log_entries >= MAX_ERROR_LOG_LENGTH)
