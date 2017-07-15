@@ -17,7 +17,7 @@ ifeq ($(OS),Linux)
     CFLAGS += -D_DEFAULT_SOURCE
 endif
 
-.PHONY: default all clean run format
+.PHONY: default all clean cleanformat run format
 .SUFFIXES:
 .SUFFIXES: .c .o
 default: all
@@ -31,11 +31,13 @@ $(DESTDIR):
 all: $(DESTDIR) $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $(DESTDIR)/$(TARGET) $(LDLIBS)
 
-clean:
+clean: cleanformat
  	# Could be $(DESTDIR)/*, but in case $(DESTDIR) is not set...
 	rm -rf $(DESTDIR)
-	rm -f src/*.orig
-	rm -f include/*.orig
+
+cleanformat:
+	rm -rf src/*.orig
+	rm -rf include/*.orig
 
 run: all
 	./$(DESTDIR)/$(TARGET)
