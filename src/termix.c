@@ -1,6 +1,7 @@
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <GLFW/glfw3.h>
 #include "termix.h"
 #include "err.h"
@@ -13,7 +14,7 @@ void tx_resize_callback(GLFWwindow * window, int width, int height);
 
 static void print_sysinfo(void)
 {
-	printf("OpenGL information:\n");
+	puts("OpenGL information:");
 	printf("Version: %s\n", glGetString(GL_VERSION));
 	printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	printf("Renderer: %s\n", glGetString(GL_RENDERER));
@@ -26,12 +27,12 @@ int tx_init(int argc, char * argv[])
 	(void)argc;
 	(void)argv;
 
-	glfwSetErrorCallback(tx_error_callback);
+	glfwSetErrorCallback(tx_gl_error_callback);
 
 	if (!glfwInit())
 	{
 		fprintf(stderr, "termix: glfw initialization failed\n");
-		tx_print_errors();
+		tx_gl_print_errors();
 		return -1;
 	}
 
@@ -54,7 +55,7 @@ int tx_run(void)
 	if (!window)
 	{
 		fprintf(stderr, "termix: window creation failed\n");
-		tx_print_errors();
+		tx_gl_print_errors();
 		return -1;
 	}
 
@@ -69,11 +70,35 @@ int tx_run(void)
 #endif
 
 	glClearColor(0.0f, 0.0f, 1.0f, 1.0f); // Blue, just for testing
-	if (tx_geterr() != 0)
+	if (tx_gl_geterr() != 0)
 	{
-		tx_print_errors();
+		tx_gl_print_errors();
 		return -1;
 	}
+
+	/* Freetype init */
+	FT_Library ft;
+	if(FT_Init_FreeType(&ft))
+	{
+		fprintf(stderr, "Could not init freetype library\n");
+		return -1;
+	}
+
+	FT_Face face;
+	char fontface_name[] = "/usr/share/fonts/corefonts/arial.ttf";
+	if(FT_New_Face(ft, fontface_name, 0, &face))
+	{
+		fprintf(stderr, "Could not open font %s\n", fontface_name);
+		return 1;
+	}
+	FT_Set_Pixel_Sizes(face, 0, 10);
+	if(FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+	{
+		fprintf(stderr, "Could not load character 'X'\n");
+		return 1;
+	}
+
+
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -81,7 +106,7 @@ int tx_run(void)
 		tx_draw(window);
 
 #if !defined(NDEBUG)
-		if (tx_geterr() != 0)
+		if (tx_gl_geterr() != 0)
 		{
 			break;
 		}
@@ -102,9 +127,9 @@ int tx_cleanup(void)
 	glfwTerminate();
 
 	// Print errors to ensure that we don't leak memory from the log
-	if (tx_geterr() != 0)
+	if (tx_gl_geterr() != 0)
 	{
-		tx_print_errors();
+		tx_gl_print_errors();
 		return -1;
 	}
 
