@@ -2,12 +2,11 @@
 -A1                   # Allman brace style
 -k2                   # Pointers in the middle
 -t                    # Tab indent
--j                    # Add braces to one line if/while blocks
+-xj                   # Add braces to one line if/while blocks
 -p                    # Pad operators and commas with one space
 -H                    # Insert a space between 'if'/'while' keywords and parentheses
 -o                    # Keep one line statements
 --max-code-length=120 # Break after 120 chars
---mode=c              # Parse as C
 -Q                    # Show only changed files
 --lineend=linux       # Use LF line endings
 -r                    # Recursive
