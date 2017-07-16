@@ -78,7 +78,7 @@ int tx_run(void)
 
 	/* Freetype init */
 	FT_Library ft;
-	if(FT_Init_FreeType(&ft))
+	if (FT_Init_FreeType(&ft))
 	{
 		fprintf(stderr, "Could not init freetype library\n");
 		return -1;
@@ -86,13 +86,13 @@ int tx_run(void)
 
 	FT_Face face;
 	char fontface_name[] = "/usr/share/fonts/corefonts/arial.ttf";
-	if(FT_New_Face(ft, fontface_name, 0, &face))
+	if (FT_New_Face(ft, fontface_name, 0, &face))
 	{
 		fprintf(stderr, "Could not open font %s\n", fontface_name);
 		return 1;
 	}
 	FT_Set_Pixel_Sizes(face, 0, 10);
-	if(FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+	if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
 	{
 		fprintf(stderr, "Could not load character 'X'\n");
 		return 1;
@@ -107,9 +107,7 @@ int tx_run(void)
 
 #if !defined(NDEBUG)
 		if (tx_gl_geterr() != 0)
-		{
 			break;
-		}
 #endif
 		// GLFW 3.2 contains a nice function which we could use here
 		// Unfortunately not all package managers have updated to 3.2

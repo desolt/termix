@@ -76,11 +76,7 @@ void tx_gl_error_callback(int error, const char * description)
 {
 	(void)error; // Suppress unused warning
 	if (log_entries >= MAX_ERROR_LOG_LENGTH)
-	{
 		fprintf(stderr, "warning: no room in error log\n");
-	}
 	else
-	{
 		error_log[log_entries++] = strdup(description);
-	}
 }

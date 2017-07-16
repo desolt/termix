@@ -15,11 +15,11 @@ struct toml_pair
 	toml_pair * next, *prev;
 };
 
-toml_err toml_table_emplace(toml_table * table, const char * key, toml_value *val, toml_pair ** out);
+toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * val, toml_pair ** out);
 
 toml_table * toml_init()
 {
-	toml_table *root = calloc(1, sizeof(toml_table));
+	toml_table * root = calloc(1, sizeof(toml_table));
 	if (root == NULL) return NULL;
 
 	root->name = NULL;
@@ -28,7 +28,7 @@ toml_table * toml_init()
 	return root;
 }
 
-toml_table * toml_create_table(const char *name, toml_table * parent)
+toml_table * toml_create_table(const char * name, toml_table * parent)
 {
 	// these are required, don't hackishly create a root table.
 	if (parent == NULL || name == NULL) return NULL;
@@ -40,7 +40,7 @@ toml_table * toml_create_table(const char *name, toml_table * parent)
 	table->pairs = NULL;
 
 	// insert the new table into the parent
-	toml_value *table_val = calloc(1, sizeof(toml_value));
+	toml_value * table_val = calloc(1, sizeof(toml_value));
 	table_val->type = TOML_TABLE;
 	table_val->table_val = table;
 	toml_table_emplace(parent, name, table_val, NULL);
@@ -58,15 +58,13 @@ bool toml_table_has_child(const toml_table * table, const char * name)
 
 toml_value * toml_table_get(const toml_table * table, const char * key)
 {
-	toml_pair *pair = table->pairs;
+	toml_pair * pair = table->pairs;
 	if (pair == NULL) return NULL;
 
-	while (pair != NULL) 
+	while (pair != NULL)
 	{
-		if (!strcmp(key, pair->key)) 
-		{
+		if (!strcmp(key, pair->key))
 			return pair->val;
-		}
 
 		pair = pair->next;
 	}
@@ -75,21 +73,20 @@ toml_value * toml_table_get(const toml_table * table, const char * key)
 }
 
 /// doesn't check if the key exists already
-toml_err toml_table_emplace(toml_table * table, const char * key, toml_value *val, toml_pair ** out)
+toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * val, toml_pair ** out)
 {
-	toml_pair *pair = calloc(1, sizeof(toml_pair));
+	toml_pair * pair = calloc(1, sizeof(toml_pair));
 	pair->key = strdup(key);
 	pair->val = val;
 
-	toml_pair *node = table->pairs;
+	toml_pair * node = table->pairs;
 	if (node != NULL)
 	{
 		while (node->next != NULL) node = node->next; // find end of linked list
 		node->next = pair;
-	} else
-	{
-		table->pairs = pair;
 	}
+	else
+		table->pairs = pair;
 
 	if (out != NULL) *out = pair;
 
