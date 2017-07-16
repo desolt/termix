@@ -29,8 +29,8 @@ endif
 .SUFFIXES: .c .o
 default: all
 
-$(TEST_DESTDIR)/%: $(TEST_SRCDIR)/%.c
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS)
+$(TEST_DESTDIR)/%: $(TEST_SRCDIR)/%.c $(LIB_TARGET)
+	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS) -L./build -ltermix
 
 $(DESTDIR):
 	mkdir -p $(DESTDIR)
