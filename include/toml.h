@@ -54,7 +54,7 @@ typedef struct toml_value
 		toml_table * table_val;
 		toml_array * arr_val;
 
-		const char * str_val;
+		char * str_val;
 		int int_val;
 		float float_val;
 		bool bool_val;

@@ -5,17 +5,18 @@
 struct toml_node
 {
 	toml_value * val;
-	toml_node * next, *prev;
+	toml_node * next;
 };
 
 struct toml_pair
 {
 	char * key;
 	toml_value * val;
-	toml_pair * next, *prev;
+	toml_pair * next;
 };
 
 toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * val, toml_pair ** out);
+
 
 toml_table * toml_init(size_t buckets)
 {
@@ -28,6 +29,64 @@ toml_table * toml_init(size_t buckets)
 
 	return root;
 }
+
+void toml_free(toml_table * table);
+void toml_free_array(toml_array * arr);
+void toml_free_value(toml_value * val);
+
+// header shows it for deleting root, but deletes any table.
+void toml_free(toml_table * table)
+{
+	// free everything the table contains
+	for (size_t i = 0; i < table->num_buckets; ++i)
+	{
+		toml_pair * pair = table->buckets[i];
+		while (pair != NULL && pair->next)
+		{
+			toml_pair * prev = pair;
+			pair = prev->next;
+			toml_free_value(prev->val);
+			free(prev->key);
+			free(prev);
+		}
+	}
+
+	free(table->name);
+	free(table->buckets);
+	free(table);
+}
+
+void toml_free_array(toml_array * arr)
+{
+	toml_node * node = arr->values;
+	while (node != NULL)
+	{
+		toml_node * prev = node;
+		node = node->next;
+		toml_free_value(prev->val);
+		free(prev);
+	}
+}
+
+void toml_free_value(toml_value * val)
+{
+	switch (val->type)
+	{
+	case TOML_TABLE:
+		toml_free(val->table_val);
+		break;
+	case TOML_ARRAY:
+		toml_free_array(val->arr_val);
+		break;
+	case TOML_STRING:
+		free(val->str_val);
+		break;
+	default: break; // rest are stack allocated
+	}
+
+	free(val);
+}
+
 
 toml_table * toml_create_table(const char * name, size_t buckets, toml_table * parent)
 {
@@ -85,8 +144,9 @@ toml_value * toml_table_get(const toml_table * table, const char * key)
 
 toml_value * toml_array_at(const toml_array * array, size_t index)
 {
-	toml_node *node = array->values;
-	for (size_t i = 0; i < index; ++i) {
+	toml_node * node = array->values;
+	for (size_t i = 0; i < index; ++i)
+	{
 		if (node == NULL) return NULL;
 
 		node = node->next;
@@ -101,6 +161,7 @@ toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * v
 	toml_pair * pair = calloc(1, sizeof(toml_pair));
 	pair->key = strdup(key);
 	pair->val = val;
+	pair->next = NULL;
 
 	size_t index = hash(key) % table->num_buckets;
 	toml_pair * node = table->buckets[index];

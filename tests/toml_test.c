@@ -4,10 +4,12 @@
 MU_TEST(toml_table_creation)
 {
 	toml_table * root = toml_init(4);
-	toml_table * child = toml_create_table("hello", 4, root);
+	toml_create_table("hello", 4, root);
 
 	mu_check(toml_table_has_child(root, "hello"));
 	mu_check(!toml_table_has_child(root, "goodbye"));
+
+	toml_free(root);
 }
 
 MU_TEST_SUITE(toml)
