@@ -12,7 +12,7 @@ typedef struct toml_node toml_node;
 
 typedef enum toml_err
 {
-	toml_success = 0,
+	TOML_SUCCESS = 0,
 } toml_err;
 
 // The different types of values toml supports.

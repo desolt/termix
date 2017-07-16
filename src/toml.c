@@ -1,4 +1,5 @@
 #include "toml.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -91,7 +92,8 @@ void toml_free_value(toml_value * val)
 toml_table * toml_create_table(const char * name, size_t buckets, toml_table * parent)
 {
 	// these are required, don't hackishly create a root table.
-	if (parent == NULL || name == NULL) return NULL;
+	assert(parent != NULL);
+	assert(name != NULL);
 
 	toml_table * table = calloc(1, sizeof(toml_table));
 	if (table == NULL) return NULL;
@@ -175,10 +177,10 @@ toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * v
 
 	if (out != NULL) *out = pair;
 
-	return toml_success;
+	return TOML_SUCCESS;
 }
 
 toml_err toml_parse(const char * src, toml_table ** out)
 {
-	return toml_success;
+	return TOML_SUCCESS;
 }
