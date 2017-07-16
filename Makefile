@@ -5,8 +5,9 @@ TEST_SRCDIR = tests
 TEST_DESTDIR = $(DESTDIR)/tests
 EXE_TARGET = $(DESTDIR)/termix
 LIB_TARGET = $(DESTDIR)/libtermix.a
-CFLAGS += -g -Iinclude --std=c99 -Wall -Wextra -Wpedantic $(shell freetype-config --cflags)
-LDLIBS += -L$(DESTDIR) -ltermix -lglfw $(shell freetype-config --libs)
+NDEBUG ?= 0
+CFLAGS += -Iinclude --std=c99 -Wall -Wextra -Wpedantic $(shell freetype-config --cflags)
+LDLIBS += -lglfw $(shell freetype-config --libs)
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(subst $(SRCDIR),$(DESTDIR),$(SRCS:.c=.o))
@@ -28,9 +29,6 @@ endif
 .SUFFIXES: .c .o
 default: all
 
-$(DESTDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -fPIC -c $< -o $@
-
 $(TEST_DESTDIR)/%: $(TEST_SRCDIR)/%.c
 	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS)
 
@@ -40,11 +38,32 @@ $(DESTDIR):
 $(TEST_DESTDIR):
 	mkdir -p $@
 
+# TODO: Messy if-statement here, how can this be cleaned up?
+ifeq ($(NDEBUG), 0)
+# We're in debug mode, build a library
+$(DESTDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -g -fPIC -c $< -o $@
+
 $(LIB_TARGET): $(DESTDIR) $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
 
 $(EXE_TARGET): $(LIB_TARGET)
-	$(CC) $(LDFLAGS) -Iinclude $(SRCDIR)/main.c -o $@ $(LDLIBS)
+	$(CC) $(LDFLAGS) -Iinclude $(SRCDIR)/main.c -o $@ -L$(DESTDIR) -ltermix $(LDLIBS)
+
+test: $(LIB_TARGET) $(TEST_DESTDIR) $(TEST_EXES)
+	@./tests/run_tests.sh $(TEST_EXES)
+else
+# We're in release mode, don't build a library
+$(DESTDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -DNDEBUG -c $< -o $@
+
+$(EXE_TARGET): $(DESTDIR) $(OBJS)
+	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
+
+test:
+	@echo "\033[0;31merror: can't run tests when NDEBUG=1\033[0m" && exit 1
+
+endif
 
 all: $(EXE_TARGET)
 
@@ -59,9 +78,6 @@ cleanformat:
 
 run: all
 	./$(EXE_TARGET)
-
-test: $(LIB_TARGET) $(TEST_DESTDIR) $(TEST_EXES)
-	@./tests/run_tests.sh $(TEST_EXES)
 
 format:
 	astyle --options=".astyle" "src/*.c" "tests/*.c" "include/*.h"
