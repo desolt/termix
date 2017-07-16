@@ -30,7 +30,7 @@ endif
 default: all
 
 $(TEST_DESTDIR)/%: $(TEST_SRCDIR)/%.c $(LIB_TARGET)
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS) -L./build -ltermix
+	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS) -L./$(DESTDIR) -ltermix
 
 $(DESTDIR):
 	mkdir -p $(DESTDIR)
