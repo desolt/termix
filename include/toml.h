@@ -23,13 +23,17 @@ typedef enum toml_type
 	TOML_STRING,
 	TOML_INT,
 	TOML_FLOAT,
-	TOML_BOOL
+	TOML_BOOL,
+	TOML_DATETIME,
+	TOML_DATE,
+	TOML_TIME,
 } toml_type;
 
 struct toml_table
 {
 	char * name; // NULL if root.
-	toml_pair * pairs;
+	toml_pair ** buckets;
+	size_t num_buckets;
 };
 
 struct toml_array
@@ -57,18 +61,23 @@ typedef struct toml_value
 
 		struct
 		{
-			uint8_t offset;
+			int offset;
+			int day, month, year;
+			int second, minute, hour;
 		} datetime; // TODO: Complete
 	};
 } toml_value;
 
-toml_table * toml_init();
+toml_table * toml_init(size_t buckets);
+void toml_free(toml_table * root);
 /// Every table requires a parent & name, except for the root table.
-toml_table * toml_create_table(const char * name, toml_table * parent);
+toml_table * toml_create_table(const char * name, size_t buckets, toml_table * parent);
 bool toml_table_has_child(const toml_table * table, const char * name);
 
 /// @return the value associated with the key. NULL if does not exist.
 toml_value * toml_table_get(const toml_table * table, const char * key);
+
+toml_array * toml_create_array(const toml_table * table);
 toml_value * toml_array_at(const toml_array * array, size_t index);
 
 /// @return The root table. name will be a null pointer.
