@@ -116,12 +116,13 @@ toml_table * toml_create_table(const char * name, size_t buckets, toml_table * p
 	return table;
 }
 
-// Magic numbers:
-const size_t PRIME1 = 31;
-const size_t PRIME2 = 73;
-const size_t PRIME3 = 103;
 size_t hash(const char * key)
 {
+	// Magic numbers:
+	const size_t PRIME1 = 31;
+	const size_t PRIME2 = 73;
+	const size_t PRIME3 = 103;
+
 	size_t hash = PRIME1;
 	for (size_t i = 0; i < strlen(key); ++i)
 		hash = (hash * PRIME2) ^ (key[i] * PRIME3);
