@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DEFAULT_BUCKET_COUNT 16
 #define MAX_TOML_ERR_MSG_LEN 128
-char toml_err_log[128] = "\0";
+
+char toml_err_log[MAX_TOML_ERR_MSG_LEN] = "\0";
 
 struct toml_node
 {
@@ -115,9 +117,9 @@ toml_table * toml_create_table(const char * name, size_t buckets, toml_table * p
 }
 
 // Magic numbers:
-#define PRIME1 31
-#define PRIME2 73
-#define PRIME3 103
+const size_t PRIME1 = 31;
+const size_t PRIME2 = 73;
+const size_t PRIME3 = 103;
 size_t hash(const char * key)
 {
 	size_t hash = PRIME1;
@@ -198,7 +200,7 @@ toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * v
 	return TOML_SUCCESS;
 }
 
-toml_err parse_string(const char * src, char ** loc, char ** out)
+toml_err parse_string(const char * src, const char ** loc, char ** out)
 {
 	assert(*src == '\'' || *src == '"');
 	assert(out != NULL);
@@ -206,7 +208,7 @@ toml_err parse_string(const char * src, char ** loc, char ** out)
 	bool literal = *src == '\'';
 	bool triple  = !strncmp("\"\"\"", src, 3);
 
-	char * end = NULL;
+	const char * end = NULL;
 	if (literal)
 		end = strstr(src + 1, "\'");
 	else if (triple)
@@ -218,7 +220,7 @@ toml_err parse_string(const char * src, char ** loc, char ** out)
 		while (end != NULL && (*end != '"' || (*end - 1) == '\\'));
 	}
 
-	char * newlineloc = strstr(src, "\n");
+	const char * newlineloc = strstr(src, "\n");
 	if (!end || (newlineloc && newlineloc < end && !triple)) // if an end is not found or a newline is made too early
 	{
 		sprintf(toml_err_log, "string was not terminated.");
@@ -238,13 +240,12 @@ toml_err parse_string(const char * src, char ** loc, char ** out)
 	return TOML_SUCCESS;
 }
 
-#define DEFAULT_BUCKETS_COUNT 16
 toml_err toml_parse(const char * src, toml_table ** out)
 {
 	assert(src != NULL);
 	assert(out != NULL);
 
-	toml_table * root = toml_init(DEFAULT_BUCKETS_COUNT);
+	toml_table * root = toml_init(DEFAULT_BUCKET_COUNT);
 
 	const char * ptr = src;
 	while (ptr != NULL && *ptr != '\0')
