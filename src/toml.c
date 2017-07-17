@@ -1,5 +1,6 @@
 #include "toml.h"
 #include <assert.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -237,6 +238,76 @@ toml_err parse_string(const char * src, const char ** loc, char ** out)
 	*out = str;
 	if (loc != NULL)
 		*loc = end + offset;
+
+	return TOML_SUCCESS;
+}
+
+toml_err parse_num(const char * src, const char ** loc, int * iout, float * fout, toml_type * type)
+{
+	assert(isdigit(*src) || *src == '.');
+	assert(iout != NULL && fout != NULL);
+	assert(type != NULL);
+
+	const char * end = strstr(src, "\n");
+	if (end == NULL)
+		end = src + strlen(src); // if no newline, expect end of value to be at the end of the string.
+
+	size_t len = end - src;
+	char num_str[len];
+	num_str[len] = '\0';
+
+	bool isfloat = false;
+	bool ishex   = false;
+	for (size_t i = 0; i < len; ++i)
+	{
+		if (!isdigit(src[i]) && src[i] != '.' && tolower(src[i]) != 'x')
+		{
+			sprintf(toml_err_log, "unexpected character '%c' in number value.", src[i]);
+			return TOML_PARSE_FAILURE;
+		}
+
+		if (src[i] == '.')
+		{
+			if (!isfloat && !ishex)
+				isfloat = true;
+			else
+			{
+				sprintf(toml_err_log, "unexpected decimal point.");
+				return TOML_PARSE_FAILURE;
+			}
+		}
+		else if (tolower(src[i]) == 'x')
+		{
+			if (!ishex && !isfloat)
+				ishex = true;
+			else
+			{
+				sprintf(toml_err_log, "unexpected character '%c'.", src[i]);
+				return TOML_PARSE_FAILURE;
+			}
+		}
+
+		num_str[i] = src[i];
+	}
+
+	if (isfloat)
+	{
+		*fout = strtof(num_str, NULL);
+		*type = TOML_FLOAT;
+	}
+	else
+	{
+		if (ishex)
+			*iout = (int) strtol(src, NULL, 0);
+		else
+			*iout = (int) strtol(src, NULL, 10);
+
+		*type = TOML_INT;
+	}
+
+	printf("%s\n", num_str);
+	if (loc != NULL)
+		*loc = end;
 
 	return TOML_SUCCESS;
 }
