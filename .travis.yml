@@ -20,6 +20,6 @@ before_install:
 install: make
 
 script:
-    - CFLAGS=-Werror make # Only use -Werror on travis
+    - CFLAGS=-Werror make test # Only use -Werror on travis
+    - make clean
     - NDEBUG=1 make # Release build
-    - make test
