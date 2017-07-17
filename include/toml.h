@@ -13,6 +13,7 @@ typedef struct toml_node toml_node;
 typedef enum toml_err
 {
 	TOML_SUCCESS = 0,
+	TOML_BAD_TYPE = 1, // for arrays
 } toml_err;
 
 // The different types of values toml supports.
@@ -64,8 +65,8 @@ typedef struct toml_value
 			int offset;
 			int day, month, year;
 			int second, minute, hour;
-		} datetime; // TODO: Complete
-	};
+		} dt_val; // TODO: Complete
+	} val; 
 } toml_value;
 
 toml_table * toml_init(size_t buckets);
@@ -73,6 +74,7 @@ void toml_free(toml_table * root);
 /// Every table requires a parent & name, except for the root table.
 toml_table * toml_create_table(const char * name, size_t buckets, toml_table * parent);
 bool toml_table_has_child(const toml_table * table, const char * name);
+bool toml_table_has_key(const toml_table * table, const char * key);
 
 /// @return the value associated with the key. NULL if does not exist.
 toml_value * toml_table_get(const toml_table * table, const char * key);

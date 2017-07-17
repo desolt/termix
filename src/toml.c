@@ -74,13 +74,13 @@ void toml_free_value(toml_value * val)
 	switch (val->type)
 	{
 	case TOML_TABLE:
-		toml_free(val->table_val);
+		toml_free(val->val.table_val);
 		break;
 	case TOML_ARRAY:
-		toml_free_array(val->arr_val);
+		toml_free_array(val->val.arr_val);
 		break;
 	case TOML_STRING:
-		free(val->str_val);
+		free(val->val.str_val);
 		break;
 	default: break; // rest are stack allocated
 	}
@@ -105,7 +105,7 @@ toml_table * toml_create_table(const char * name, size_t buckets, toml_table * p
 	// insert the new table into the parent
 	toml_value * table_val = calloc(1, sizeof(toml_value));
 	table_val->type = TOML_TABLE;
-	table_val->table_val = table;
+	table_val->val.table_val = table;
 	toml_table_emplace(parent, name, table_val, NULL);
 
 	return table;
@@ -126,6 +126,11 @@ bool toml_table_has_child(const toml_table * table, const char * name)
 	if (val == NULL) return false;
 
 	return val->type == TOML_TABLE; // not the same as has_key
+}
+
+bool toml_table_has_key(const toml_table * table, const char * name)
+{
+	return toml_table_get(table, name) != NULL;
 }
 
 toml_value * toml_table_get(const toml_table * table, const char * key)
