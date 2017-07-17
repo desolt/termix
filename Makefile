@@ -1,12 +1,13 @@
 # Variables
 NAME     := termix
 SRCDIR    = src
-OBJDIR    = obj
+BUILDDIR  = build
+OBJDIR    = $(BUILDDIR)/obj
 INCDIR    = include
 NDEBUG   ?= 0
 OS       := $(shell uname -s)
-APP_PATH := $(NAME)
-LIB_PATH := $(OBJDIR)/lib$(NAME).a
+APP_PATH := $(BUILDDIR)/$(NAME)
+LIB_PATH := $(BUILDDIR)/lib$(NAME).a
 SRCS      = $(wildcard $(SRCDIR)/*.c)
 OBJS      = $(subst $(SRCDIR),$(OBJDIR),$(SRCS:.c=.o))
 RM        = rm -vf
@@ -15,13 +16,13 @@ RM        = rm -vf
 CC_FLAGS      := $(CFLAGS) -I$(INCDIR) --std=c99 -Wall -Wextra -pedantic
 CC_FLAGS      += $(shell freetype-config --cflags)
 LD_FLAGS      := $(shell pkg-config --libs glfw3) $(shell freetype-config --libs)
-LD_FLAGS_TEST := -L./$(OBJDIR) -l$(NAME)
+LD_FLAGS_TEST := -L./$(BUILDDIR) -l$(NAME)
 
 
 # OS-specific
 ifeq ($(OS),Darwin)
 	LD_FLAGS      += -framework OpenGL
-else
+else \
 ifeq ($(OS),Linux)
 	LD_FLAGS      += $(shell pkg-config --libs gl)
 	CC_FLAGS      += -D_DEFAULT_SOURCE $(shell pkg-config --cflags gl)
@@ -81,7 +82,7 @@ $(LIB_PATH): $(OBJDIR) $(OBJS)
 		$(AR) $(ARFLAGS) $@ $(OBJS)
 
 $(APP_PATH): $(LIB_PATH)
-		$(CC) -I$(INCDIR) $(SRCDIR)/main.c -o $@ -L$(OBJDIR) -l$(NAME) $(LD_FLAGS)
+		$(CC) -I$(INCDIR) $(SRCDIR)/main.c -o $@ -L$(BUILDDIR) -l$(NAME) $(LD_FLAGS)
 
 test: $(LIB_PATH) $(OBJDIR_TEST) $(TEST_OBJS)
 		@./tests/run_tests.sh $(TEST_OBJS)
@@ -97,5 +98,4 @@ $(APP_PATH): $(OBJDIR) $(OBJS)
 test:
 		@echo "Error: can't run tests when NDEBUG=1" && exit 1
 
-endif
 endif
