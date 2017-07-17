@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <stdio.h>
 
 typedef struct toml_table toml_table;
 typedef struct toml_array toml_array;
@@ -14,6 +14,7 @@ typedef enum toml_err
 {
 	TOML_SUCCESS = 0,
 	TOML_BAD_TYPE = 1, // for arrays
+	TOML_PARSE_FAILURE = 2,
 } toml_err;
 
 // The different types of values toml supports.
@@ -84,5 +85,10 @@ toml_value * toml_array_at(const toml_array * array, size_t index);
 
 /// @return The root table. name will be a null pointer.
 toml_err toml_parse(const char * src, toml_table ** root);
+toml_err toml_parse_file(FILE * file, toml_table ** root);
+
+/// @param len the length of the buffer.
+/// copies the error message to the buffer, including the null terminator.
+size_t toml_get_err_msg(char * buffer, size_t len);
 
 #endif // _TOML_H
