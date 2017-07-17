@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <stdio.h>
 
 typedef struct toml_table toml_table;
 typedef struct toml_array toml_array;
@@ -13,6 +13,8 @@ typedef struct toml_node toml_node;
 typedef enum toml_err
 {
 	TOML_SUCCESS = 0,
+	TOML_BAD_TYPE = 1, // for arrays
+	TOML_PARSE_FAILURE = 2,
 } toml_err;
 
 // The different types of values toml supports.
@@ -68,7 +70,7 @@ typedef struct toml_value
 		bool boolean;
 
 		struct toml_datetime datetime;
-	} v;
+	} val;
 } toml_value;
 
 toml_table * toml_init(size_t buckets);
@@ -76,6 +78,7 @@ void toml_free(toml_table * root);
 /// Every table requires a parent & name, except for the root table.
 toml_table * toml_create_table(const char * name, size_t buckets, toml_table * parent);
 bool toml_table_has_child(const toml_table * table, const char * name);
+bool toml_table_has_key(const toml_table * table, const char * key);
 
 /// @return the value associated with the key. NULL if does not exist.
 toml_value * toml_table_get(const toml_table * table, const char * key);
@@ -85,5 +88,10 @@ toml_value * toml_array_at(const toml_array * array, size_t index);
 
 /// @return The root table. name will be a null pointer.
 toml_err toml_parse(const char * src, toml_table ** root);
+toml_err toml_parse_file(FILE * file, toml_table ** root);
+
+/// @param len the length of the buffer.
+/// copies the error message to the buffer, including the null terminator.
+size_t toml_get_err_msg(char * buffer, size_t len);
 
 #endif // _TOML_H

@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DEFAULT_BUCKET_COUNT 16
+#define MAX_TOML_ERR_MSG_LEN 128
+
+char toml_err_log[MAX_TOML_ERR_MSG_LEN] = "\0";
+
 struct toml_node
 {
 	toml_value * val;
@@ -74,13 +79,13 @@ void toml_free_value(toml_value * val)
 	switch (val->type)
 	{
 	case TOML_TABLE:
-		toml_free(val->v.table);
+		toml_free(val->val.table);
 		break;
 	case TOML_ARRAY:
-		toml_free_array(val->v.array);
+		toml_free_array(val->val.array);
 		break;
 	case TOML_STRING:
-		free(val->v.string);
+		free(val->val.string);
 		break;
 	default: break; // rest are stack allocated
 	}
@@ -105,7 +110,7 @@ toml_table * toml_create_table(const char * name, size_t buckets, toml_table * p
 	// insert the new table into the parent
 	toml_value * table_val = calloc(1, sizeof(toml_value));
 	table_val->type = TOML_TABLE;
-	table_val->v.table = table;
+	table_val->val.table = table;
 	toml_table_emplace(parent, name, table_val, NULL);
 
 	return table;
@@ -113,9 +118,14 @@ toml_table * toml_create_table(const char * name, size_t buckets, toml_table * p
 
 size_t hash(const char * key)
 {
-	size_t hash = 31;
+	// Magic numbers:
+	const size_t PRIME1 = 31;
+	const size_t PRIME2 = 73;
+	const size_t PRIME3 = 103;
+
+	size_t hash = PRIME1;
 	for (size_t i = 0; i < strlen(key); ++i)
-		hash = (hash * 31) ^ (key[i] * 103);
+		hash = (hash * PRIME2) ^ (key[i] * PRIME3);
 
 	return hash;
 }
@@ -126,6 +136,11 @@ bool toml_table_has_child(const toml_table * table, const char * name)
 	if (val == NULL) return false;
 
 	return val->type == TOML_TABLE; // not the same as has_key
+}
+
+bool toml_table_has_key(const toml_table * table, const char * name)
+{
+	return toml_table_get(table, name) != NULL;
 }
 
 toml_value * toml_table_get(const toml_table * table, const char * key)
@@ -157,7 +172,6 @@ toml_value * toml_array_at(const toml_array * array, size_t index)
 	return node->val;
 }
 
-/// doesn't check if the key exists already
 toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * val, toml_pair ** out)
 {
 	toml_pair * pair = calloc(1, sizeof(toml_pair));
@@ -169,7 +183,14 @@ toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * v
 	toml_pair * node = table->buckets[index];
 	if (node != NULL)
 	{
-		while (node->next != NULL) node = node->next; // find end of linked list
+		while (node->next != NULL)
+		{
+			if (strcmp(key, node->key))
+				node = node->next; // find end of linked list
+			else
+				break; // replace the current value if the same key.
+		}
+
 		node->next = pair;
 	}
 	else
@@ -180,8 +201,94 @@ toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * v
 	return TOML_SUCCESS;
 }
 
+toml_err parse_string(const char * src, const char ** loc, char ** out)
+{
+	assert(*src == '\'' || *src == '"');
+	assert(out != NULL);
+
+	bool literal = *src == '\'';
+	bool triple  = !strncmp("\"\"\"", src, 3);
+
+	const char * end = NULL;
+	if (literal)
+		end = strstr(src + 1, "\'");
+	else if (triple)
+		end = strstr(src + 3, "\"\"\"");
+	else
+	{
+		do
+			end = strstr(src + 1, "\"");
+		while (end != NULL && (*end != '"' || (*end - 1) == '\\'));
+	}
+
+	const char * newlineloc = strstr(src, "\n");
+	if (!end || (newlineloc && newlineloc < end && !triple)) // if an end is not found or a newline is made too early
+	{
+		sprintf(toml_err_log, "string was not terminated.");
+		return TOML_PARSE_FAILURE;
+	}
+
+	const size_t offset = triple ? 3 : 1; // the length of the quotes
+	const size_t len = end - (src + offset);
+	char * str = calloc(len, sizeof(char));
+	strncpy(str, src + offset, len);
+	str[len] = '\0';
+
+	*out = str;
+	if (loc != NULL)
+		*loc = end + offset;
+
+	return TOML_SUCCESS;
+}
+
 toml_err toml_parse(const char * src, toml_table ** out)
 {
-	(void)src; (void)out;
+	assert(src != NULL);
+	assert(out != NULL);
+
+	toml_table * root = toml_init(DEFAULT_BUCKET_COUNT);
+
+	const char * ptr = src;
+	while (ptr != NULL && *ptr != '\0')
+	{
+		switch (*ptr)
+		{
+		case ' ':
+		case '\n':
+			++ptr; // ignore whitespace
+			continue;
+		}
+	}
+
+	*out = root;
+
 	return TOML_SUCCESS;
+}
+
+toml_err toml_parse_file(FILE * file, toml_table ** out)
+{
+	rewind(file); // ensure that we start at the start of a file
+	fseek(file, 0l, SEEK_END);
+	long size = ftell(file);
+	rewind(file);
+
+	char buffer[size + 1];
+	fread(buffer, sizeof(char), size, file);
+	buffer[size] = '\0'; // fread doesn't null terminate
+
+	return toml_parse(buffer, out);
+}
+
+size_t toml_get_err_msg(char * buffer, size_t buf_len)
+{
+	size_t err_len = strlen(toml_err_log) + 1;
+	if (err_len == 0)
+	{
+		*buffer = '\0';
+		return 0;
+	}
+
+	size_t len = err_len < buf_len ? err_len : buf_len;
+	strncpy(buffer, toml_err_log, len);
+	return len;
 }
