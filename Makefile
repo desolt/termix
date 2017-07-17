@@ -8,6 +8,7 @@ LIB_TARGET = $(DESTDIR)/libtermix.a
 NDEBUG ?= 0
 CFLAGS += -Iinclude --std=c99 -Wall -Wextra -pedantic $(shell freetype-config --cflags)
 LDLIBS += -lglfw $(shell freetype-config --libs)
+TEST_LDLIBS += -L./$(DESTDIR) -ltermix
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(subst $(SRCDIR),$(DESTDIR),$(SRCS:.c=.o))
@@ -19,9 +20,11 @@ OS := $(shell uname -s)
 ifeq ($(OS),Darwin)
     LDLIBS += -framework OpenGL
 endif
+
 ifeq ($(OS),Linux)
     LDLIBS += -lGL
     CFLAGS += -D_DEFAULT_SOURCE
+    TEST_LDLIBS += -lrt
 endif
 
 .PHONY: default all clean cleanformat run format test
@@ -30,7 +33,7 @@ endif
 default: all
 
 $(TEST_DESTDIR)/%: $(TEST_SRCDIR)/%.c $(LIB_TARGET)
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS) -L./$(DESTDIR) -ltermix -lrt
+	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS) $(TEST_LDLIBS)
 
 $(DESTDIR):
 	mkdir -p $(DESTDIR)
