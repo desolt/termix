@@ -86,7 +86,6 @@ $(APP_PATH): $(LIB_PATH)
 		$(CC) -I$(INCDIR) $(SRCDIR)/main.c -o $@ -L$(BUILDDIR) -l$(NAME) $(LD_FLAGS)
 
 test: $(LIB_PATH) $(OBJDIR_TEST) $(TEST_OBJS)
-		@echo $(TEST_OBJS)
 		@./tests/run_tests.sh $(TEST_OBJS)
 
 # Release section
