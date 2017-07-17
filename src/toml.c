@@ -1,13 +1,11 @@
 #include "toml.h"
+#include "err.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define DEFAULT_BUCKET_COUNT 16
-#define MAX_TOML_ERR_MSG_LEN 128
-
-char toml_err_log[MAX_TOML_ERR_MSG_LEN] = "\0";
 
 struct toml_node
 {
@@ -212,20 +210,20 @@ toml_err parse_string(const char * src, const char ** loc, char ** out)
 
 	const char * end = NULL;
 	if (literal)
-		end = strstr(src + 1, "\'");
+		end = strchr(src + 1, '\'');
 	else if (triple)
 		end = strstr(src + 3, "\"\"\"");
 	else
 	{
 		do
-			end = strstr(src + 1, "\"");
+			end = strchr(src + 1, '"');
 		while (end != NULL && (*end != '"' || (*end - 1) == '\\'));
 	}
 
-	const char * newlineloc = strstr(src, "\n");
+	const char * newlineloc = strchr(src, '\n');
 	if (!end || (newlineloc && newlineloc < end && !triple)) // if an end is not found or a newline is made too early
 	{
-		sprintf(toml_err_log, "string was not terminated.");
+		tx_errlog_append("string was not terminated.");
 		return TOML_PARSE_FAILURE;
 	}
 
@@ -242,27 +240,32 @@ toml_err parse_string(const char * src, const char ** loc, char ** out)
 	return TOML_SUCCESS;
 }
 
-toml_err parse_num(const char * src, const char ** loc, int * iout, float * fout, toml_type * type)
+toml_err parse_num(const char * src, const char ** loc, toml_value ** val)
 {
-	assert(isdigit(*src) || *src == '.');
-	assert(iout != NULL && fout != NULL);
-	assert(type != NULL);
+	assert(val != NULL);
 
-	const char * end = strstr(src, "\n");
+	if (!isdigit(*src) && *src != '.')
+	{
+		tx_errlog_append_fmt("toml: expected number, got %c", *src);
+		return TOML_PARSE_FAILURE;
+	}
+
+	const char * end = strchr(src, '\n');
 	if (end == NULL)
 		end = src + strlen(src); // if no newline, expect end of value to be at the end of the string.
 
 	size_t len = end - src;
-	char num_str[len];
+	char num_str[len + 1];
 	num_str[len] = '\0';
 
 	bool isfloat = false;
 	bool ishex   = false;
 	for (size_t i = 0; i < len; ++i)
 	{
-		if (!isdigit(src[i]) && src[i] != '.' && tolower(src[i]) != 'x')
+		const char lowcase = tolower(src[i]);
+		if ((!isdigit(src[i]) && !ishex) && src[i] != '.' && lowcase != 'x' && lowcase != 'e')
 		{
-			sprintf(toml_err_log, "unexpected character '%c' in number value.", src[i]);
+			tx_errlog_append_fmt("toml: unexpected character '%c' in number value.", src[i]);
 			return TOML_PARSE_FAILURE;
 		}
 
@@ -272,17 +275,17 @@ toml_err parse_num(const char * src, const char ** loc, int * iout, float * fout
 				isfloat = true;
 			else
 			{
-				sprintf(toml_err_log, "unexpected decimal point.");
+				tx_errlog_append("toml: unexpected decimal point.");
 				return TOML_PARSE_FAILURE;
 			}
 		}
-		else if (tolower(src[i]) == 'x')
+		else if (lowcase == 'x')
 		{
-			if (!ishex && !isfloat)
+			if (!ishex && !isfloat && i == 1 && src[i - 1] == '0')
 				ishex = true;
 			else
 			{
-				sprintf(toml_err_log, "unexpected character '%c'.", src[i]);
+				tx_errlog_append_fmt("toml: unexpected character '%c'.", src[i]);
 				return TOML_PARSE_FAILURE;
 			}
 		}
@@ -290,22 +293,23 @@ toml_err parse_num(const char * src, const char ** loc, int * iout, float * fout
 		num_str[i] = src[i];
 	}
 
+	toml_value * num = calloc(1, sizeof(toml_value));
 	if (isfloat)
 	{
-		*fout = strtof(num_str, NULL);
-		*type = TOML_FLOAT;
+		num->type = TOML_FLOAT;
+		num->val.floating = strtold(num_str, NULL);
 	}
 	else
 	{
 		if (ishex)
-			*iout = (int) strtol(src, NULL, 0);
+			num->val.integer = strtoll(src, NULL, 0);
 		else
-			*iout = (int) strtol(src, NULL, 10);
+			num->val.integer = strtoll(src, NULL, 10);
 
-		*type = TOML_INT;
+		num->type = TOML_INT;
 	}
 
-	printf("%s\n", num_str);
+	*val = num;
 	if (loc != NULL)
 		*loc = end;
 
@@ -348,18 +352,4 @@ toml_err toml_parse_file(FILE * file, toml_table ** out)
 	buffer[size] = '\0'; // fread doesn't null terminate
 
 	return toml_parse(buffer, out);
-}
-
-size_t toml_get_err_msg(char * buffer, size_t buf_len)
-{
-	size_t err_len = strlen(toml_err_log) + 1;
-	if (err_len == 0)
-	{
-		*buffer = '\0';
-		return 0;
-	}
-
-	size_t len = err_len < buf_len ? err_len : buf_len;
-	strncpy(buffer, toml_err_log, len);
-	return len;
 }

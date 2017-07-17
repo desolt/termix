@@ -65,8 +65,8 @@ typedef struct toml_value
 		toml_array * array;
 
 		char * string;
-		int integer;
-		float floating;
+		long long integer;
+		long double floating;
 		bool boolean;
 
 		struct toml_datetime datetime;
@@ -89,9 +89,5 @@ toml_value * toml_array_at(const toml_array * array, size_t index);
 /// @return The root table. name will be a null pointer.
 toml_err toml_parse(const char * src, toml_table ** root);
 toml_err toml_parse_file(FILE * file, toml_table ** root);
-
-/// @param len the length of the buffer.
-/// copies the error message to the buffer, including the null terminator.
-size_t toml_get_err_msg(char * buffer, size_t len);
 
 #endif // _TOML_H
