@@ -1,5 +1,7 @@
 language: c
-compiler: gcc
+compiler: 
+    - gcc
+    - clang
 
 os:
     - linux
@@ -18,5 +20,6 @@ before_install:
 install: make
 
 script:
-    - make
+    - CFLAGS=-Werror make # Only use -Werror on travis
+    - NDEBUG=1 make # Release build
     - make test
