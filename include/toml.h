@@ -44,6 +44,14 @@ struct toml_array
 	toml_node * values;
 };
 
+// TODO: Complete
+struct toml_datetime
+{
+	int offset;
+	int day, month, year;
+	int second, minute, hour;
+};
+
 
 // TODO: UTF-8
 typedef struct toml_value
@@ -53,20 +61,15 @@ typedef struct toml_value
 	// Check toml_type before retrieving.
 	union
 	{
-		toml_table * table_val;
-		toml_array * arr_val;
+		toml_table * table;
+		toml_array * array;
 
-		char * str_val;
-		int int_val;
-		float float_val;
-		bool bool_val;
+		char * string;
+		int integer;
+		float floating;
+		bool boolean;
 
-		struct
-		{
-			int offset;
-			int day, month, year;
-			int second, minute, hour;
-		} dt_val; // TODO: Complete
+		struct toml_datetime datetime;
 	} val;
 } toml_value;
 

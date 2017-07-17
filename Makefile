@@ -1,86 +1,101 @@
-SHELL = /bin/sh
-SRCDIR = src
-DESTDIR = build
-TEST_SRCDIR = tests
-TEST_DESTDIR = $(DESTDIR)/tests
-EXE_TARGET = $(DESTDIR)/termix
-LIB_TARGET = $(DESTDIR)/libtermix.a
-NDEBUG ?= 0
-CFLAGS += -Iinclude --std=c99 -Wall -Wextra -pedantic $(shell freetype-config --cflags)
-LDLIBS += -lglfw $(shell freetype-config --libs)
-TEST_LDLIBS += -L./$(DESTDIR) -ltermix
+# Variables
+NAME     := termix
+SRCDIR    = src
+BUILDDIR  = build
+OBJDIR    = $(BUILDDIR)/obj
+INCDIR    = include
+NDEBUG   ?= 0
+OS       := $(shell uname -s)
+APP_PATH := $(BUILDDIR)/$(NAME)
+LIB_PATH := $(BUILDDIR)/lib$(NAME).a
+SRCS      = $(wildcard $(SRCDIR)/*.c)
+OBJS      = $(subst $(SRCDIR),$(OBJDIR),$(SRCS:.c=.o))
+RM        = rm -vf
 
-SRCS = $(wildcard $(SRCDIR)/*.c)
-OBJS = $(subst $(SRCDIR),$(DESTDIR),$(SRCS:.c=.o))
+# Compilation flags
+CC_FLAGS      := $(CFLAGS) -I$(INCDIR) --std=c99 -Wall -Wextra -pedantic
+CC_FLAGS      += $(shell freetype-config --cflags)
+LD_FLAGS      := $(shell pkg-config --libs glfw3) $(shell freetype-config --libs)
+LD_FLAGS_TEST := -L./$(BUILDDIR) -l$(NAME)
 
-TEST_SRCS = $(wildcard $(TEST_SRCDIR)/*.c)
-TEST_EXES = $(subst $(TEST_SRCDIR),$(DESTDIR)/tests, $(TEST_SRCS:.c=))
 
-OS := $(shell uname -s)
+# OS-specific
 ifeq ($(OS),Darwin)
-    LDLIBS += -framework OpenGL
-endif
-
+	LD_FLAGS      += -framework OpenGL
+else \
 ifeq ($(OS),Linux)
-    LDLIBS += -lGL
-    CFLAGS += -D_DEFAULT_SOURCE
-    TEST_LDLIBS += -lrt
+	LD_FLAGS      += $(shell pkg-config --libs gl)
+	CC_FLAGS      += -D_DEFAULT_SOURCE $(shell pkg-config --cflags gl)
+	LD_FLAGS_TEST += -lrt
 endif
 
+
+# Targets
 .PHONY: default all clean cleanformat run format test
-.SUFFIXES:
-.SUFFIXES: .c .o
+
 default: all
 
-$(TEST_DESTDIR)/%: $(TEST_SRCDIR)/%.c $(LIB_TARGET)
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@ $(LDLIBS) $(TEST_LDLIBS)
-
-$(DESTDIR):
-	mkdir -p $(DESTDIR)
-
-$(TEST_DESTDIR):
-	mkdir -p $@
-
-# TODO: Messy if-statement here, how can this be cleaned up?
-ifeq ($(NDEBUG), 0)
-# We're in debug mode, build a library
-$(DESTDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -g -fPIC -c $< -o $@
-
-$(LIB_TARGET): $(DESTDIR) $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
-
-$(EXE_TARGET): $(LIB_TARGET)
-	$(CC) $(LDFLAGS) -Iinclude $(SRCDIR)/main.c -o $@ -L$(DESTDIR) -ltermix $(LDLIBS)
-
-test: $(LIB_TARGET) $(TEST_DESTDIR) $(TEST_EXES)
-	@./tests/run_tests.sh $(TEST_EXES)
-else
-# We're in release mode, don't build a library
-$(DESTDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -DNDEBUG -c $< -o $@
-
-$(EXE_TARGET): $(DESTDIR) $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
-
-test:
-	@echo "\033[0;31merror: can't run tests when NDEBUG=1\033[0m" && exit 1
-
-endif
-
-all: $(EXE_TARGET)
-
-clean: cleanformat
- 	# Could be $(DESTDIR)/*, but in case $(DESTDIR) is not set...
-	rm -rf $(DESTDIR)
-
-cleanformat:
-	rm -rf src/*.orig
-	rm -rf include/*.orig
-	rm -rf tests/*.orig
-
-run: all
-	./$(EXE_TARGET)
+all: $(APP_PATH)
 
 format:
-	astyle --options=".astyle" "src/*.c" "tests/*.c" "include/*.h"
+	astyle --options=".astyle" "$(SRCDIR)/*.c" "tests/*.c" "$(INCDIR)/*.h"
+
+run: all
+	./$(APP_PATH)
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+clean: cleanformat
+	$(RM) -r $(OBJDIR)
+	$(RM)  $(APP_PATH)
+
+cleanformat:
+	$(RM) -r $(SRC)/*.orig
+	$(RM) -r $(INCDIR)/*.orig
+	$(RM) -r $(SRCDIR_TEST)/*.orig
+
+options:
+	@echo "CFLAGS   = $(CC_FLAGS)"
+	@echo "LDFLAGS  = $(LD_FLAGS)"
+	@echo "CC       = $(CC)"
+
+# Test/debug section
+ifeq ($(NDEBUG), 0)
+	# Variables
+	SRCDIR_TEST  = tests
+	OBJDIR_TEST := $(OBJDIR)/$(SRCDIR_TEST)
+	TEST_SRCS   := $(wildcard $(SRCDIR_TEST)/*.c)
+	TEST_OBJS   := $(subst $(SRCDIR_TEST),$(OBJDIR)/$(SRCDIR_TEST), $(TEST_SRCS:.c=))
+
+	# Targets
+$(OBJDIR_TEST):
+		mkdir -p $@
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+		$(CC) $(CC_FLAGS) -g -fPIC -c $< -o $@
+
+$(OBJDIR_TEST)/%: $(SRCDIR_TEST)/%.c $(LIB_PATH)
+		$(CC) $(CC_FLAGS) $< -o $@ $(LD_FLAGS) $(LD_FLAGS_TEST)
+
+$(LIB_PATH): $(OBJDIR) $(OBJS)
+		$(AR) $(ARFLAGS) $@ $(OBJS)
+
+$(APP_PATH): $(LIB_PATH)
+		$(CC) -I$(INCDIR) $(SRCDIR)/main.c -o $@ -L$(BUILDDIR) -l$(NAME) $(LD_FLAGS)
+
+test: $(LIB_PATH) $(OBJDIR_TEST) $(TEST_OBJS)
+		@./tests/run_tests.sh $(TEST_OBJS)
+
+# Release section
+else
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+		$(CC) $(CC_FLAGS) -DNDEBUG -c $< -o $@
+
+$(APP_PATH): $(OBJDIR) $(OBJS)
+		$(CC) $(CC_FLAGS) $(OBJS) -o $@ $(LD_FLAGS)
+
+test:
+		@echo "Error: can't run tests when NDEBUG=1" && exit 1
+
+endif

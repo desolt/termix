@@ -77,13 +77,13 @@ void toml_free_value(toml_value * val)
 	switch (val->type)
 	{
 	case TOML_TABLE:
-		toml_free(val->val.table_val);
+		toml_free(val->val.table);
 		break;
 	case TOML_ARRAY:
-		toml_free_array(val->val.arr_val);
+		toml_free_array(val->val.array);
 		break;
 	case TOML_STRING:
-		free(val->val.str_val);
+		free(val->val.string);
 		break;
 	default: break; // rest are stack allocated
 	}
@@ -108,7 +108,7 @@ toml_table * toml_create_table(const char * name, size_t buckets, toml_table * p
 	// insert the new table into the parent
 	toml_value * table_val = calloc(1, sizeof(toml_value));
 	table_val->type = TOML_TABLE;
-	table_val->val.table_val = table;
+	table_val->val.table = table;
 	toml_table_emplace(parent, name, table_val, NULL);
 
 	return table;
@@ -238,8 +238,14 @@ toml_err parse_string(const char * src, char ** loc, char ** out)
 	return TOML_SUCCESS;
 }
 
+#define DEFAULT_BUCKETS_COUNT 16
 toml_err toml_parse(const char * src, toml_table ** out)
 {
+	assert(src != NULL);
+	assert(out != NULL);
+
+	toml_table * root = toml_init(DEFAULT_BUCKETS_COUNT);
+
 	const char * ptr = src;
 	while (ptr != NULL && *ptr != '\0')
 	{
@@ -251,6 +257,8 @@ toml_err toml_parse(const char * src, toml_table ** out)
 			continue;
 		}
 	}
+
+	*out = root;
 
 	return TOML_SUCCESS;
 }

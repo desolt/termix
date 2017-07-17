@@ -14,7 +14,7 @@ for test in $@; do
 	fi
 done
 
-rm temp_test_out.log
+rm -f temp_test_out.log
 if [ $num_failed -ne 0 ] ; then
 	printf "$COLOR_RED%d test(s) failed.$COLOR_RESET\n" $num_failed
 	exit 1
