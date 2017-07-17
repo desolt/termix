@@ -182,7 +182,7 @@ toml_err toml_table_emplace(toml_table * table, const char * key, toml_value * v
 	{
 		while (node->next != NULL)
 		{
-			if (strcmp(key, node->key)) 
+			if (strcmp(key, node->key))
 				node = node->next; // find end of linked list
 			else
 				break; // replace the current value if the same key.
@@ -206,7 +206,7 @@ toml_err parse_string(const char * src, char ** loc, char ** out)
 	bool literal = *src == '\'';
 	bool triple  = !strncmp("\"\"\"", src, 3);
 
-	char *end = NULL;
+	char * end = NULL;
 	if (literal)
 		end = strstr(src + 1, "\'");
 	else if (triple)
@@ -218,7 +218,7 @@ toml_err parse_string(const char * src, char ** loc, char ** out)
 		while (end != NULL && (*end != '"' || (*end - 1) == '\\'));
 	}
 
-	char *newlineloc = strstr(src, "\n");
+	char * newlineloc = strstr(src, "\n");
 	if (!end || (newlineloc && newlineloc < end && !triple)) // if an end is not found or a newline is made too early
 	{
 		sprintf(toml_err_log, "string was not terminated.");
@@ -240,9 +240,16 @@ toml_err parse_string(const char * src, char ** loc, char ** out)
 
 toml_err toml_parse(const char * src, toml_table ** out)
 {
-	const char *ptr = src;
+	const char * ptr = src;
 	while (ptr != NULL && *ptr != '\0')
 	{
+		switch (*ptr)
+		{
+		case ' ':
+		case '\n':
+			++ptr; // ignore whitespace
+			continue;
+		}
 	}
 
 	return TOML_SUCCESS;

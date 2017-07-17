@@ -67,7 +67,7 @@ typedef struct toml_value
 			int day, month, year;
 			int second, minute, hour;
 		} dt_val; // TODO: Complete
-	} val; 
+	} val;
 } toml_value;
 
 toml_table * toml_init(size_t buckets);
