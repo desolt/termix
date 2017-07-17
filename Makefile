@@ -6,7 +6,7 @@ TEST_DESTDIR = $(DESTDIR)/tests
 EXE_TARGET = $(DESTDIR)/termix
 LIB_TARGET = $(DESTDIR)/libtermix.a
 NDEBUG ?= 0
-CFLAGS += -Iinclude --std=c99 -Wall -Wextra -Wpedantic $(shell freetype-config --cflags)
+CFLAGS += -Iinclude --std=c99 -Wall -Wextra -pedantic $(shell freetype-config --cflags)
 LDLIBS += -lglfw $(shell freetype-config --libs)
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
