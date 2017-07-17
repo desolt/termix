@@ -1,0 +1,16 @@
+language: c
+compiler: gcc
+
+sudo: required
+
+before_install:
+    # Required to obtain libglfw3-dev
+    - sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu xenial main universe'
+    - sudo apt-get -qq update
+    - sudo apt-get install -y libglfw3-dev libfreetype6-dev
+
+install: make
+
+script:
+    - make
+    - make test
