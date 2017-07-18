@@ -301,11 +301,7 @@ toml_err parse_num(const char * src, const char ** loc, toml_value ** val)
 	}
 	else
 	{
-		if (ishex)
-			num->val.integer = strtoll(src, NULL, 0);
-		else
-			num->val.integer = strtoll(src, NULL, 10);
-
+		num->val.integer = strtoll(src, NULL, ishex ? 0 : 10);
 		num->type = TOML_INT;
 	}
 
